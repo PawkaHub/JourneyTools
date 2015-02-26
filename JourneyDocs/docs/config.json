@@ -1,0 +1,20 @@
+{
+    "title": "Journey",
+    "tagline": "Adventure awaits you",
+    "author": "Pieter Parker",
+    "image": "<base_url>img/app.png",
+    "theme": "daux-dark",
+    "template": "default",
+    "clean_urls": true,
+    "toggle_code": true,
+    "breadcrumbs": true,
+    "breadcrumb_separator": "Chevrons",
+    "date_modified": true,
+    "float": true,
+    "file_editor": false,
+    "repo": "PawkaHub/Journey",
+    "ignore": {
+            "files": ["Work_In_Progress.md"],
+            "folders": ["99_Not_Ready"]
+    }
+}
