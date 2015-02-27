@@ -208,12 +208,6 @@
                                         ?>
                                         <?php if ($page['file_editor']) echo '<a href="javascript:;" id="editThis" class="btn">Edit this page</a>'; ?>
                                     </h1>
-                                    <span style="float: left; font-size: 10px; color: gray;">
-                                        <?php echo date("l, F j, Y", $page['modified_time']);?>
-                                    </span>
-                                    <span style="float: right; font-size: 10px; color: gray;">
-                                        <?php echo date("g:i A", $page['modified_time']);?>
-                                    </span>
                                 </div>
                             <?php } else { ?>
                                 <div class="page-header">

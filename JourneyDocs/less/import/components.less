@@ -3,6 +3,12 @@ Componenets
 ============================================================================================== */
 a {
     color: @light;
+
+    &:hover, &:focus {
+        text-decoration: none;
+        color: @light;
+        opacity: 0.5;
+    }
 }
 
 .btn {
@@ -88,15 +94,17 @@ code {
     li {
         a {
             margin: 0px;
-            padding: 6px 15px;
+            padding: 7px 15px 8px 15px;
             .roboto-slab.regular;
-            color: @dark;
+            color: @text;
             font-size: 15px;
             text-shadow: none;
             border-color: @lines;
+            background-color: @sidebar-background;
 
-            &:hover {
-                color: @dark;
+            &:hover, &:focus, &:active {
+                .opacity(1.0);
+                color: @text;
                 text-shadow: none;
                 background-color: @sidebar-hover;
             }
@@ -122,27 +130,26 @@ code {
 
         ul {
             display: none;
-            margin-left: 15px;
+            margin-left: 0;
 
             li {
                 a {
                     .sans-serif(normal, 14px);
                     margin: 0px;
-                    margin-left: -15px;
                     padding: 3px 30px;
                     border: none;
                     color: @text;
-                    .opacity(0.70);
 
                     &:hover {
                         .opacity(1.0);
-                        background-color: transparent;
+                        color: @text;
+                        background-color: @sidebar-hover;
                     }
                 }
 
                 &.active {
                     a {
-                        color: @dark;
+                        color: @text;
                     }
                 }
             }
@@ -151,11 +158,14 @@ code {
 }
 
 .page-header {
-    margin: 10px 0px;
+    margin: 0px 0px 20px 0px;
     padding: 0px;
+    border-bottom: none;
 
     h1 {
         margin-top: 0px;
+        margin-bottom: 0;
+        font-size: 24px;
     }
 
     sub-heading {
@@ -165,7 +175,7 @@ code {
 
 pre {
     border: none;
-    background-color: @light;
+    background-color: @sidebar-background;
     border-radius: 0;
     padding: 10px;
     margin-left: -20px;
@@ -174,7 +184,6 @@ pre {
     padding-right: 30px;
 
     code {
-        background: transparent;
         border: none;
     }
 }
@@ -201,7 +210,7 @@ pre {
                     width: 50%;
                     min-height: 100%;
                     overflow: auto;
-                    background-color: white;
+                    background-color: @dark;
                     display: block;
                     margin: 0px;
                     position: absolute;
@@ -234,7 +243,7 @@ pre {
                 width: 47%;
                 margin-left: 1.5%;
                 margin-right: 1.5%;
-                background-color: white;
+                background-color: @dark;
 
                 &:before {
                     width: 100%;
@@ -259,11 +268,10 @@ pre {
             pre {
                 float: left;
                 clear: right;
-                width: 47%;
+                width: 50%;
                 border: none;
-                border-left: 10px solid white;
                 margin: 0px 0px 10px 0px;
-                padding: 0px 0px 0px 10px;
+                padding: 0px 15px 0px 10px;
             }
         }
     }

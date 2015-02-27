@@ -1,8 +1,27 @@
-$(function () {
+$(document).ready(function () {
     $('.aj-nav').click(function (e) {
         e.preventDefault();
-        $(this).parent().siblings().find('ul').slideUp();
+        $(this).addClass("opened");
+        var text = $(this).text().replace(/\s+/g, '-').toLowerCase();
+        if (localStorage.getItem(text + "-opened") === "true") {
+            //It's already opened, set it's flag to disabled for page reloads
+            localStorage.setItem(text + "-opened","false");
+        } else {
+            //Otherwise, set it to open
+            localStorage.setItem(text + "-opened","true");
+        }
         $(this).next().slideToggle();
+    });
+
+    //Get all nav items and reopen them based on local storage
+    ajNav = $('.aj-nav');
+    ajNav.each(function(){
+        var text = $(this).text().replace(/\s+/g, '-').toLowerCase();
+        if (localStorage.getItem(text + "-opened") === "true") {
+            console.log(text);
+            //If it exists in local storage, open it
+            //$(this).next().slideToggle();
+        }
     });
 
     $('table').addClass('table');
@@ -36,7 +55,8 @@ $(function () {
     if (!codeBlockView.size()) return;
     if (!codeBlocks.size()) {
         codeBlockState = 2;
-        toggleCodeBlockBtn.classList.add('hidden');
+        if (toggleCodeBlockBtn)
+            toggleCodeBlockBtn.classList.add('hidden');
     }
-    setCodeBlockStyle(codeBlockState);
+    //setCodeBlockStyle(codeBlockState);
 });

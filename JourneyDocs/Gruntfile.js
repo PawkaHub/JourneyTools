@@ -22,11 +22,7 @@ module.exports = function (grunt) {
                     report: 'min'
                 },
                 files: {
-                    "css/daux-blue.min.css": "less/daux-blue.less",
-                    "css/daux-green.min.css": "less/daux-green.less",
-                    "css/daux-navy.min.css": "less/daux-navy.less",
-                    "css/daux-red.min.css": "less/daux-red.less",
-                    "css/daux-dark.min.css": "less/daux-dark.less"
+                    "templates/default/themes/daux-dark/css/daux-dark.css": "less/daux-dark.less"
                 }
             }
         },
