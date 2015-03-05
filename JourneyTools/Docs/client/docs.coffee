@@ -179,6 +179,7 @@ Template.editor.helpers
 
   configAce: ->
     (ace) ->
+      console.log 'Renderer'
       # Set some options on the editor
       ace.setOption('theme','ace/theme/monokai')
       ace.setOption('highlightActiveLine',false)

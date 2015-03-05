@@ -9,6 +9,6 @@ autopublish
 insecure
 coffeescript
 stylus
-mizzao:sharejs-ace
 markdown
 mrt:jquery-ui
+mizzao:sharejs-ace
