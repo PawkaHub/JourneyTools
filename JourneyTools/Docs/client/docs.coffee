@@ -37,7 +37,7 @@ Template.docList.helpers
 Template.docItem.helpers
   level: ->
     words = @title.split(' ')
-    console.log 'words',words
+    #console.log 'words',words
     # Check the length of the hashtags to determine distance
     switch words[0].length
       when 1 then 'h1'
@@ -65,12 +65,14 @@ Template.editor.helpers
     Session.get("document")
 
 insertingTitle = false
+deletingDocument = false
+editable = false
 
 Template.editor.helpers
   load: ->
     document = Documents.findOne()
     if document
-      console.log 'doc exists'
+      #console.log 'doc exists'
       Session.set 'document', document._id
     else
       console.log 'no doc!'
@@ -81,6 +83,16 @@ Template.editor.helpers
       ace.moveCursorTo(0)
       # Setup an added event listener
       Session.set 'snapshot',doc.getText()
+
+      console.log 'DOC LOADED!',doc.getText()
+
+      lines = doc.getText().split('\n')
+
+      #Filter out everything that isn't a hashtag line
+      lines = lines.filter (line) ->
+        line.substring(0, 1) == '#'
+
+      console.log 'DOC LINES!',lines
 
       #console.log 'CURRENT DOC!',doc
       # Insert the title into the newly created document
@@ -98,6 +110,7 @@ Template.editor.helpers
         insertingTitle = false
 
       doc.on 'change', (op) ->
+        #window.editable = true
         # Update the markdown preview
         Session.set 'snapshot',doc.getText()
 
@@ -108,9 +121,44 @@ Template.editor.helpers
         lines = lines.filter (line) ->
           line.substring(0, 1) == '#'
 
+        # Is the operation type an insert and is it a hashtag at the beginning of a new line? If so, create a new document
+        if op && op[0] && op[0].i == "#" && !insertingTitle && cursor.column == 1
+          editable = true
+          current = Documents.findOne Session.get 'document'
+          if current
+
+            # Is the current document sandwiched inbetween another document?
+            nextDocument =
+              Documents.find { order: $gt: current.order },
+                sort: order: 1
+                limit: 1
+            nextDocument = nextDocument.fetch()[0]
+
+            if nextDocument
+              # Are we inbetween a top level?
+              distance = nextDocument.order - current.order
+              #console.log 'distance!',distance
+              newOrder = current.order += 0.0000001
+              #console.log 'DOCUMENT EXISTS AFTER CURRENT',nextDocument.order, newOrder
+            else
+              #console.log 'Increment normally'
+              newOrder = current.order += 1
+
+            #console.log 'HASHTAG DETECTED! CREATE A NEW DOCUMENT',lines, newOrder
+            Documents.insert
+              title: op[0].i
+              order: newOrder
+            , (err,id) ->
+              #console.log 'RESULT!', err, id
+              return unless id
+              # Remove hashtag
+              ace.removeWordLeft()
+              Session.set 'document', id
+              insertingTitle = true
         # Check if the operation type is a delete and is the document empty? If so, delete the document
-        if op && op[0] && op[0].d && doc.getText().length == 0
+        else if op && op[0] && op[0].d && doc.getText().length == 0
           #console.log 'Delete empty document!'
+          editable = false
           current = Documents.findOne Session.get 'document'
           if current
             order = current.order
@@ -134,43 +182,9 @@ Template.editor.helpers
                   console.log 'Switch to previous!'
                   Session.set 'document',prevDocument._id
             )
-
-        # Is the operation type an insert and is it a hashtag at the beginning of a new line? If so, create a new document
-        if op && op[0] && op[0].i == "#" && !insertingTitle && cursor.column == 1
-          current = Documents.findOne Session.get 'document'
-          if current
-
-            # Is the current document sandwiched inbetween another document?
-            nextDocument =
-              Documents.find { order: $gt: current.order },
-                sort: order: 1
-                limit: 1
-            nextDocument = nextDocument.fetch()[0]
-
-            if nextDocument
-              # Are we inbetween a top level?
-              distance = nextDocument.order - current.order
-              console.log 'distance!',distance
-              newOrder = current.order += 0.0000001
-              console.log 'DOCUMENT EXISTS AFTER CURRENT',nextDocument.order, newOrder
-            else
-              console.log 'Increment normally'
-              newOrder = current.order += 1
-
-            console.log 'HASHTAG DETECTED! CREATE A NEW DOCUMENT',lines, newOrder
-            Documents.insert
-              title: op[0].i
-              order: newOrder
-            , (err,id) ->
-              #console.log 'RESULT!', err, id
-              return unless id
-              # Remove hashtag
-              ace.removeWordLeft()
-              Session.set 'document', id
-              insertingTitle = true
-        else if op && op[0] && doc.getText().length >= 2
+        else if op && op[0] && doc.getText().length >= 2 && editable
           # If it's another type of insert and the document isn't empty
-          console.log 'UPDATE DOCUMENT TITLE',lines
+          console.log 'UPDATE DOCUMENT TITLE',doc.getText(),editable
           Documents.update
               _id: Session.get 'document'
             ,
