@@ -1,0 +1,106 @@
+@import 'nib'
+
+darkest = #1C1F26
+dark = #232830
+medium = rgba(43,48,59,1)
+halfMedium = rgba(43,48,59,0.5)
+select = #3D4550
+text = rgb(192, 197, 206)
+halfText = rgba(192, 197, 206, 0.5)
+
+::-webkit-scrollbar
+  display none
+
+html, body
+  position fixed
+  top 0
+  right 0
+  bottom 0
+  left 0
+  background darkest
+  font 14px/normal 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace
+
+a
+  color inherit
+  text-decoration none
+
+.navigation
+  position fixed
+  top 0
+  right 80%
+  bottom 0
+  left 0
+  color text
+  background-color dark
+  overflow-x hidden
+  overflow-y auto
+
+.navigationItem
+  display block
+  color halfText
+  min-height 36px
+  line-height 36px
+  &.h1
+  	padding-left 10px
+  	font-weight bold
+  	color text
+  	&.active, &:hover, &:focus
+    	background-color medium
+  &.h2
+  	padding-left 30px
+  &.h3
+  	padding-left 50px
+  &.h4
+  	padding-left 70px
+  &.h5
+  	padding-left 90px
+  &.h6
+  	padding-left 110px
+  &.active, &:hover, &:focus
+    background-color halfMedium
+
+.editor, #editor
+  position fixed
+  top 0
+  right 40%
+  bottom 0
+  left 20%
+  color text
+  background medium
+  font inherit
+  line-height 1.5
+  cursor text
+
+#editor
+  background-color transparent
+  margin-left 1.5em
+  margin-right 1.5em
+  overflow hidden
+
+.ace_scrollbar
+  display none
+
+//Customize selected color
+.ace-tm .ace_marker-layer .ace_selection, .ace-monokai .ace_marker-layer .ace_selection
+	background #3D4550!important
+	opacity 1
+
+.output
+  position fixed
+  top 0
+  right 0
+  bottom 0
+  left 60%
+  color text
+  padding 1em 1.5em 1em 1.5em
+  overflow-x hidden
+  overflow-y auto
+
+.code
+  padding 1em 1.5em 1em 1.5em
+  background-color dark
+  display block
+
+//Output Customization
+img
+	width 100%

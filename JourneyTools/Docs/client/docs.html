@@ -1,0 +1,41 @@
+<head>
+  <title>Journey Documentation</title>
+
+</head>
+
+<body>
+    {{> main}}
+</body>
+
+<template name="main">
+    {{> docList}}
+    <div class="editor">
+        {{> editor}}
+    </div>
+    <div class="output">
+    	{{>code}}
+    </div>
+</template>
+
+<template name="docList">
+	<div id="navigation" class="navigation">
+    {{#each documents}}
+    {{> docItem}}
+    {{/each}}
+    </div>
+</template>
+
+<template name="docItem">
+    <a class="navigationItem {{#if current}}active{{/if}} {{level}}" href="#">{{title}}</a>
+</template>
+
+<template name="editor">
+	{{load}}
+    {{#with docid}}
+        {{> sharejsAce docid=this onRender=configAce onConnect=setupAce id="editor"}}
+    {{/with}}
+</template>
+
+<template name="code">
+	{{#markdown}}{{input}}{{/markdown}}
+</template>
