@@ -199,3 +199,10 @@ Template.editor.helpers
 Template.code.helpers
   input: ->
     Session.get 'snapshot'
+
+# Global key events
+window.onkeydown = (e) ->
+  # F key?
+  if e.ctrlKey and e.shiftKey and e.keyCode is 70
+    # Enter fullscreen mode
+    screenfull.toggle(document.documentElement)
