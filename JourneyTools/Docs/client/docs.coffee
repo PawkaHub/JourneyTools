@@ -83,9 +83,6 @@ Template.editor.helpers
   docid: ->
     Session.get("document")
 
-insertingTitle = false
-deletingDocument = false
-editable = false
 window.shouldDelete = false
 
 # Check if user is typing anything than the delete key, and prevent deletion if they are
@@ -115,8 +112,10 @@ Template.editor.helpers
       #Listen for the delete key
       aceEditor.keyBinding.addKeyboardHandler (data, hash, keyString, keyCode, event) ->
           if keyCode == 8
-            console.log 'Oh',data,hash,keyString,keyCode,event
             window.shouldDelete = true
+
+      #Listen for paste events
+
 
       lines = doc.getText().split('\n')
 
@@ -140,11 +139,8 @@ Template.editor.helpers
         ace.moveCursorTo(0,2)
 
       doc.on 'change', (op) ->
-        #window.editable = true
         # Update the markdown preview
         Session.set 'snapshot',doc.getText()
-
-        #console.log 'Change'
 
         lines = doc.getText().split('\n')
         cursor = ace.getCursorPosition()
@@ -152,6 +148,8 @@ Template.editor.helpers
         #Filter out everything that isn't a hashtag line
         lines = lines.filter (line) ->
           line.substring(0, 1) == '#'
+
+        console.log 'Change!',lines
 
         # Is the operation type an insert and is it a hashtag at the beginning of a new line? If so, create a new document
         if op && op[0] && op[0].i == "#" && cursor.column == 1 && cursor.row != 0
@@ -178,7 +176,8 @@ Template.editor.helpers
               #console.log 'Increment normally'
               newOrder = current.order += 1
 
-            ace.removeWordLeft()
+            # Remove hashtag
+            ace.removeToLineStart()
 
             #console.log 'HASHTAG DETECTED! CREATE A NEW DOCUMENT',lines, newOrder
             Documents.insert
@@ -187,10 +186,7 @@ Template.editor.helpers
             , (err,id) ->
               #console.log 'RESULT!', err, id
               return unless id
-              # Remove hashtag
-              #ace.removeWordLeft()
               Session.set 'document', id
-              insertingTitle = true
         # Check if the operation type is a delete and is the document empty? If so, delete the document
         else if op && op[0] && op[0].d && doc.getText().length == 0
           #console.log 'Delete empty document!'
@@ -228,7 +224,6 @@ Template.editor.helpers
           #console.log 'Dwoop',ace.session.getValue().length
 
           # If it's another type of insert and the document isn't empty
-          #console.log 'UPDATE DOCUMENT TITLE',doc.getText(),editable
           Documents.update
               _id: Session.get 'document'
             ,
