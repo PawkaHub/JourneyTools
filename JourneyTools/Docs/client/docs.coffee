@@ -21,8 +21,8 @@ Template.docList.rendered = ->
         #if it was dragged into the last position grab the
         #  previous element's data context and add one to the order
         newOrder = Blaze.getData(before).order + 1
-      #else
-      #  newOrder = (Blaze.getData(after).order + Blaze.getData(before).order) / 2
+      else
+        newOrder = (Blaze.getData(after).order + Blaze.getData(before).order) / 2
       #update the dragged Item's order
       Documents.update
         _id: Blaze.getData(el)._id
@@ -36,27 +36,31 @@ Template.docList.helpers
 
 Template.docItem.helpers
   level: ->
-    words = @title.split(' ')
-    #console.log 'words',words
-    # Check the length of the hashtags to determine distance
-    switch words[0].length
-      when 1 then 'h1'
-      when 2 then 'h2'
-      when 3 then 'h3'
-      when 4 then 'h4'
-      when 5 then 'h5'
-      when 6 then 'h6'
-      else ''
+    words = @title.split(' ') if @title?
+    # Find hashtags
+    hashtags = @title.match(/#*([^a-zA-Z0-9 ]+?)/gi) if @title?
+    #console.log 'hashtags',hashtags
+
+    if hashtags
+      #console.log 'words',words
+      # Check the length of the hashtags to determine distance
+      switch hashtags[0].length
+        when 1 then 'h1'
+        when 2 then 'h2'
+        when 3 then 'h3'
+        when 4 then 'h4'
+        when 5 then 'h5'
+        when 6 then 'h6'
+        else ''
   title: ->
     # Strip all hashtags
-    regexp = new RegExp('#([^\\s]*)','g');
-    title = @title.replace(regexp, '')
+    title = @title.replace(/#*([^a-zA-Z0-9 ]+?)/gi, '') if @title?
     title
   current: ->
     Session.equals("document", @_id)
 
 Template.docItem.events =
-  "click a": (e) ->
+  "click .navigationItem": (e) ->
     e.preventDefault()
     Session.set("document", @_id)
 
@@ -79,12 +83,10 @@ Template.editor.helpers
   setupAce: ->
     (ace,doc) ->
       window.aceEditor = ace
-      # Retain cursor position so it's not at bottom of document
-      ace.moveCursorTo(0)
       # Setup an added event listener
       Session.set 'snapshot',doc.getText()
 
-      console.log 'DOC LOADED!',doc.getText()
+      console.log 'DOC LOADED!',ace.getCursorPosition()
 
       lines = doc.getText().split('\n')
 
@@ -92,27 +94,25 @@ Template.editor.helpers
       lines = lines.filter (line) ->
         line.substring(0, 1) == '#'
 
-      console.log 'DOC LINES!',lines
+      cursor = ace.getCursorPosition()
 
-      #console.log 'CURRENT DOC!',doc
+      #console.log 'DOC LINES!',lines
+
+      # Move the cursor to the 0 row/column position to avoid a negative cursor position error whenever we load in a new document
+      ace.moveCursorTo(0,0)
+
       # Insert the title into the newly created document
-      if insertingTitle
+      if ace.session.getValue().length == 0
         console.log 'Inserting title..'
         ace.getSession().setValue('#')
-        ace.moveCursorTo(1)
-        insertingTitle = false
-
-      if doc.getText().length == 0
-        console.log 'Document is empty, give it some text'
-        insertingTitle = true
-        ace.getSession().setValue('#')
-        ace.moveCursorTo(1)
-        insertingTitle = false
+        ace.moveCursorTo(0,2)
 
       doc.on 'change', (op) ->
         #window.editable = true
         # Update the markdown preview
         Session.set 'snapshot',doc.getText()
+
+        #console.log 'Change'
 
         lines = doc.getText().split('\n')
         cursor = ace.getCursorPosition()
@@ -122,9 +122,11 @@ Template.editor.helpers
           line.substring(0, 1) == '#'
 
         # Is the operation type an insert and is it a hashtag at the beginning of a new line? If so, create a new document
-        if op && op[0] && op[0].i == "#" && !insertingTitle && cursor.column == 1
-          editable = true
+        if op && op[0] && op[0].i == "#" && cursor.column == 1 && cursor.row != 0
           current = Documents.findOne Session.get 'document'
+
+          console.log 'Doop'
+
           if current
 
             # Is the current document sandwiched inbetween another document?
@@ -135,14 +137,16 @@ Template.editor.helpers
             nextDocument = nextDocument.fetch()[0]
 
             if nextDocument
-              # Are we inbetween a top level?
-              distance = nextDocument.order - current.order
+              # Are we inbetween a top level? If so, half the order from the current document to place it underneath
+              #distance = nextDocument.order + current.order / 2
               #console.log 'distance!',distance
-              newOrder = current.order += 0.0000001
+              newOrder = (nextDocument.order + current.order) / 2
               #console.log 'DOCUMENT EXISTS AFTER CURRENT',nextDocument.order, newOrder
             else
               #console.log 'Increment normally'
               newOrder = current.order += 1
+
+            #ace.removeWordLeft()
 
             #console.log 'HASHTAG DETECTED! CREATE A NEW DOCUMENT',lines, newOrder
             Documents.insert
@@ -152,13 +156,15 @@ Template.editor.helpers
               #console.log 'RESULT!', err, id
               return unless id
               # Remove hashtag
-              ace.removeWordLeft()
+              #ace.removeWordLeft()
               Session.set 'document', id
               insertingTitle = true
         # Check if the operation type is a delete and is the document empty? If so, delete the document
         else if op && op[0] && op[0].d && doc.getText().length == 0
           #console.log 'Delete empty document!'
-          editable = false
+
+          console.log 'Boop'
+
           current = Documents.findOne Session.get 'document'
           if current
             order = current.order
@@ -180,11 +186,15 @@ Template.editor.helpers
                   Session.set 'document',Documents.findOne()._id
                 else
                   console.log 'Switch to previous!'
-                  Session.set 'document',prevDocument._id
+                  if prevDocument
+                    Session.set 'document',prevDocument._id
             )
-        else if op && op[0] && doc.getText().length >= 2 && editable
+        else if op && op[0] && ace.session.getValue().length > 0 && cursor.row == 0
+
+          console.log 'Dwoop',ace.session.getValue().length
+
           # If it's another type of insert and the document isn't empty
-          console.log 'UPDATE DOCUMENT TITLE',doc.getText(),editable
+          #console.log 'UPDATE DOCUMENT TITLE',doc.getText(),editable
           Documents.update
               _id: Session.get 'document'
             ,
@@ -193,7 +203,7 @@ Template.editor.helpers
 
   configAce: ->
     (ace) ->
-      console.log 'Renderer'
+      #console.log 'Renderer'
       # Set some options on the editor
       ace.setOption('theme','ace/theme/monokai')
       ace.setOption('highlightActiveLine',false)
