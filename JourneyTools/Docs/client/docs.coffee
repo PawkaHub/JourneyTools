@@ -52,12 +52,29 @@ Template.docItem.helpers
         when 5 then 'h5'
         when 6 then 'h6'
         else ''
+    else
+      console.log 'empty'
   title: ->
     # Strip all hashtags
     title = @title.replace(/#*([^a-zA-Z0-9 ]+?)/gi, '') if @title?
-    title
+    console.log 'title',title
+    if title == '' || title == ' '
+      'untitled'
+    else
+      title
+  untitled: ->
+    # Strip all hashtags
+    title = @title.replace(/#*([^a-zA-Z0-9 ]+?)/gi, '') if @title?
+    console.log 'title',title
+    if title == '' || title == ' '
+      'untitled'
+    else
+      ''
   current: ->
-    Session.equals("document", @_id)
+    if Session.equals("document", @_id)
+      'active'
+    else
+      ''
 
 Template.docItem.events =
   "click .navigationItem": (e) ->
@@ -95,6 +112,8 @@ Template.editor.helpers
         line.substring(0, 1) == '#'
 
       cursor = ace.getCursorPosition()
+
+      window.doc = doc
 
       #console.log 'DOC LINES!',lines
 
@@ -146,7 +165,7 @@ Template.editor.helpers
               #console.log 'Increment normally'
               newOrder = current.order += 1
 
-            #ace.removeWordLeft()
+            ace.removeWordLeft()
 
             #console.log 'HASHTAG DETECTED! CREATE A NEW DOCUMENT',lines, newOrder
             Documents.insert
@@ -163,7 +182,13 @@ Template.editor.helpers
         else if op && op[0] && op[0].d && doc.getText().length == 0
           #console.log 'Delete empty document!'
 
-          console.log 'Boop'
+          console.log 'Boop', op
+
+          pasting = false
+          # Check if user pasted into editor and cancel document deletion accordingly
+          ace.on 'paste', ->
+            console.log 'Pasted!'
+            pasting = true
 
           current = Documents.findOne Session.get 'document'
           if current
@@ -174,11 +199,12 @@ Template.editor.helpers
                 sort: order: -1
                 limit: 1
             prevDocument = prevDocument.fetch()[0]
-            console.log 'DELETING DOCUMENT!'
+
+            if !pasting
+              console.log 'WILL DELETE!'
 
             # Only fire if there's more than one document
-
-            Meteor.call('deleteDocument', Session.get('document'), (err,result) ->
+            ###Meteor.call('deleteDocument', Session.get('document'), (err,result) ->
                 console.log 'DELETED DOCUMENT!'
                 # Switch to the prev document and delete the old one
                 if Documents.find().count() == 1
@@ -188,10 +214,10 @@ Template.editor.helpers
                   console.log 'Switch to previous!'
                   if prevDocument
                     Session.set 'document',prevDocument._id
-            )
+            )###
         else if op && op[0] && ace.session.getValue().length > 0 && cursor.row == 0
 
-          console.log 'Dwoop',ace.session.getValue().length
+          #console.log 'Dwoop',ace.session.getValue().length
 
           # If it's another type of insert and the document isn't empty
           #console.log 'UPDATE DOCUMENT TITLE',doc.getText(),editable
