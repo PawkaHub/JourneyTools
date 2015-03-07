@@ -57,7 +57,6 @@ Template.docItem.helpers
   title: ->
     # Strip all hashtags
     title = @title.replace(/#*([^a-zA-Z0-9 ]+?)/gi, '') if @title?
-    console.log 'title',title
     if title == '' || title == ' '
       'untitled'
     else
@@ -65,7 +64,6 @@ Template.docItem.helpers
   untitled: ->
     # Strip all hashtags
     title = @title.replace(/#*([^a-zA-Z0-9 ]+?)/gi, '') if @title?
-    console.log 'title',title
     if title == '' || title == ' '
       'untitled'
     else
@@ -88,6 +86,18 @@ Template.editor.helpers
 insertingTitle = false
 deletingDocument = false
 editable = false
+window.shouldDelete = false
+
+# Check if user is typing anything than the delete key, and prevent deletion if they are
+#document.onkeydown = (e) ->
+  #Is it a delete key? If so set the shouldDelete flag to true
+  #console.log 'e.which',e.which
+  #if e.keyCode == 8 || e.keyCode == 46
+  #  console.log 'ShouldDelete!'
+  #  window.shouldDelete = true
+  #else
+  #  console.log 'Nevermind!'
+  #  window.shouldDelete = false
 
 Template.editor.helpers
   load: ->
@@ -100,10 +110,13 @@ Template.editor.helpers
   setupAce: ->
     (ace,doc) ->
       window.aceEditor = ace
-      # Setup an added event listener
       Session.set 'snapshot',doc.getText()
 
-      console.log 'DOC LOADED!',ace.getCursorPosition()
+      #Listen for the delete key
+      aceEditor.keyBinding.addKeyboardHandler (data, hash, keyString, keyCode, event) ->
+          if keyCode == 8
+            console.log 'Oh',data,hash,keyString,keyCode,event
+            window.shouldDelete = true
 
       lines = doc.getText().split('\n')
 
@@ -182,14 +195,6 @@ Template.editor.helpers
         else if op && op[0] && op[0].d && doc.getText().length == 0
           #console.log 'Delete empty document!'
 
-          console.log 'Boop', op
-
-          pasting = false
-          # Check if user pasted into editor and cancel document deletion accordingly
-          ace.on 'paste', ->
-            console.log 'Pasted!'
-            pasting = true
-
           current = Documents.findOne Session.get 'document'
           if current
             order = current.order
@@ -200,21 +205,24 @@ Template.editor.helpers
                 limit: 1
             prevDocument = prevDocument.fetch()[0]
 
-            if !pasting
-              console.log 'WILL DELETE!'
+            #console.log 'Checking if shouldDelete!',window.shouldDelete
 
-            # Only fire if there's more than one document
-            ###Meteor.call('deleteDocument', Session.get('document'), (err,result) ->
-                console.log 'DELETED DOCUMENT!'
-                # Switch to the prev document and delete the old one
-                if Documents.find().count() == 1
-                  console.log 'Do nothing!'
-                  Session.set 'document',Documents.findOne()._id
-                else
-                  console.log 'Switch to previous!'
-                  if prevDocument
-                    Session.set 'document',prevDocument._id
-            )###
+            if window.shouldDelete
+              console.log 'WILL DELETE!'
+              # Only fire if there's more than one document
+              Meteor.call('deleteDocument', Session.get('document'), (err,result) ->
+                  console.log 'DELETED DOCUMENT!'
+                  window.shouldDelete = false
+                  # Switch to the prev document and delete the old one
+                  if Documents.find().count() == 1
+                    console.log 'Do nothing!'
+                    Session.set 'document',Documents.findOne()._id
+                  else
+                    console.log 'Switch to previous!'
+                    if prevDocument
+                      Session.set 'document',prevDocument._id
+              )
+
         else if op && op[0] && ace.session.getValue().length > 0 && cursor.row == 0
 
           #console.log 'Dwoop',ace.session.getValue().length
