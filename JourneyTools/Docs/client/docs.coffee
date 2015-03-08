@@ -1,5 +1,25 @@
+Meteor.startup ->
+  # Set up delete observer
+  Documents.find({},{sort:{order:1}}).observe
+    removed:(doc) ->
+
+      console.log 'Removed!', doc
+
+      order = doc.order
+
+      prevDocument =
+        Documents.find { order: $lt: doc.order },
+          sort: order: -1
+          limit: 1
+      prevDocument = prevDocument.fetch()[0]
+
+      console.log 'Switch to previous!'
+      if prevDocument
+        Session.set 'document',prevDocument._id
+
 # Sortable list functionality
 Template.docList.rendered = ->
+  # Set up sortable navigation
   @$('#navigation').sortable
     axis: 'y'
     revert: 100
@@ -84,17 +104,7 @@ Template.editor.helpers
     Session.get("document")
 
 window.shouldDelete = false
-
-# Check if user is typing anything than the delete key, and prevent deletion if they are
-#document.onkeydown = (e) ->
-  #Is it a delete key? If so set the shouldDelete flag to true
-  #console.log 'e.which',e.which
-  #if e.keyCode == 8 || e.keyCode == 46
-  #  console.log 'ShouldDelete!'
-  #  window.shouldDelete = true
-  #else
-  #  console.log 'Nevermind!'
-  #  window.shouldDelete = false
+window.wasPasted = false
 
 Template.editor.helpers
   load: ->
@@ -110,12 +120,14 @@ Template.editor.helpers
       Session.set 'snapshot',doc.getText()
 
       #Listen for the delete key
-      aceEditor.keyBinding.addKeyboardHandler (data, hash, keyString, keyCode, event) ->
+      ace.keyBinding.addKeyboardHandler (data, hash, keyString, keyCode, event) ->
           if keyCode == 8
             window.shouldDelete = true
 
       #Listen for paste events
-
+      ace.on 'paste', (e) ->
+        console.log 'Pasted!'
+        window.wasPasted = true
 
       lines = doc.getText().split('\n')
 
@@ -134,7 +146,7 @@ Template.editor.helpers
 
       # Insert the title into the newly created document
       if ace.session.getValue().length == 0
-        console.log 'Inserting title..'
+        #console.log 'Inserting title..'
         ace.getSession().setValue('#')
         ace.moveCursorTo(0,2)
 
@@ -149,13 +161,22 @@ Template.editor.helpers
         lines = lines.filter (line) ->
           line.substring(0, 1) == '#'
 
-        console.log 'Change!',lines
+        #if op && op[0] && op[0].i
+        #  opLines = op[0].i.split('\n')
+
+        #  #Filter out everything that isn't a hashtag line
+        #  opLines = opLines.filter (opLine) ->
+        #    opLine.substring(0, 1) == '#'
+        #  console.log 'OP!',opLines
+
+        #if op && op[0] && op[0].i
+        #  lines = op[0].i.match(/^.*$/mg)
 
         # Is the operation type an insert and is it a hashtag at the beginning of a new line? If so, create a new document
         if op && op[0] && op[0].i == "#" && cursor.column == 1 && cursor.row != 0
           current = Documents.findOne Session.get 'document'
 
-          console.log 'Doop'
+          console.log 'TYPING IN DOCUMENT!'
 
           if current
 
@@ -179,7 +200,6 @@ Template.editor.helpers
             # Remove hashtag
             ace.removeToLineStart()
 
-            #console.log 'HASHTAG DETECTED! CREATE A NEW DOCUMENT',lines, newOrder
             Documents.insert
               title: op[0].i
               order: newOrder
@@ -187,6 +207,20 @@ Template.editor.helpers
               #console.log 'RESULT!', err, id
               return unless id
               Session.set 'document', id
+        else if lines.length > 1 && !window.shouldDelete && window.wasPasted
+
+          # Remove first item from lines array
+          lines.shift()
+
+          console.log 'A BUNCH OF SHIT WAS PASTED!',lines
+
+          current = Documents.findOne Session.get 'document'
+
+          if current
+            console.log 'op',op
+
+          window.wasPasted = false
+
         # Check if the operation type is a delete and is the document empty? If so, delete the document
         else if op && op[0] && op[0].d && doc.getText().length == 0
           #console.log 'Delete empty document!'
@@ -200,8 +234,6 @@ Template.editor.helpers
                 sort: order: -1
                 limit: 1
             prevDocument = prevDocument.fetch()[0]
-
-            #console.log 'Checking if shouldDelete!',window.shouldDelete
 
             if window.shouldDelete
               console.log 'WILL DELETE!'
@@ -221,7 +253,7 @@ Template.editor.helpers
 
         else if op && op[0] && ace.session.getValue().length > 0 && cursor.row == 0
 
-          #console.log 'Dwoop',ace.session.getValue().length
+          #console.log 'Dwoop',lines
 
           # If it's another type of insert and the document isn't empty
           Documents.update
