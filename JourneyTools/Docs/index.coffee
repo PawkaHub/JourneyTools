@@ -39,7 +39,7 @@ Meteor.methods
 if Meteor.isServer
 	if Documents.find().count() == 0
 		Documents.insert
-				title: "# Getting Started"
+				title: ''
 				order: 0
 			, (err, id) ->
 				return unless id

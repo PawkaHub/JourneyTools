@@ -71,9 +71,9 @@ Template.docItem.helpers
         when 4 then 'h4'
         when 5 then 'h5'
         when 6 then 'h6'
-        else ''
+        else 'h1'
     else
-      console.log 'empty'
+      'h1'
   title: ->
     # Strip all hashtags
     title = @title.replace(/#*([^a-zA-Z0-9 ]+?)/gi, '') if @title?
@@ -146,9 +146,22 @@ Template.editor.helpers
 
       # Insert the title into the newly created document
       if ace.session.getValue().length == 0
-        #console.log 'Inserting title..'
-        ace.getSession().setValue('#')
-        ace.moveCursorTo(0,2)
+        # Check the current document title against the value stored in the editor
+        current = Documents.findOne Session.get 'document'
+        console.log 'current',current
+        # Document title
+        title = current.title
+        # Editor Value
+        editorTitle = ace.getValue().split('\n')
+
+        if title != editorTitle
+          console.log 'Titles don\'t match!'
+          ace.getSession().setValue(title)
+          ace.moveCursorTo(1,0)
+        else
+          #console.log 'Inserting title..'
+          ace.getSession().setValue('#')
+          ace.moveCursorTo(0,2)
 
       doc.on 'change', (op) ->
         # Update the markdown preview
@@ -192,64 +205,6 @@ Template.editor.helpers
               #console.log 'RESULT!', err, id
               return unless id
               Session.set 'document', id
-        else if lines.length > 1 && !window.shouldDelete && window.wasPasted
-
-          # Remove first item from lines array
-          lines.shift()
-
-          #console.log 'A BUNCH OF SHIT WAS PASTED!',lines
-
-          current = Documents.findOne Session.get 'document'
-
-          if current
-            console.log 'op',op
-
-            for line in lines
-              #console.log 'line!',line
-              # Does the line have a hashtag?
-              hashtagLine = line.match(/^#+([a-zA-Z0-9 ]+?)$/mgi)
-
-              if hashtagLine
-                console.log 'hashtagLine!',hashtagLine
-                # Copy the text to clipboard and then remove it
-
-                # Is the current document sandwiched inbetween another document?
-                nextDocument =
-                  Documents.find { order: $gt: current.order },
-                    sort: order: 1
-                    limit: 1
-                nextDocument = nextDocument.fetch()[0]
-
-                if nextDocument
-                  # Are we inbetween a top level? If so, half the order from the current document to place it underneath
-                  #distance = nextDocument.order + current.order / 2
-                  #console.log 'distance!',distance
-                  newOrder = (nextDocument.order + current.order) / 2
-                  #console.log 'DOCUMENT EXISTS AFTER CURRENT',nextDocument.order, newOrder
-                else
-                  #console.log 'Increment normally'
-                  newOrder = current.order += 1
-
-                # Remove text
-                #ace.removeToLineStart()
-
-                # Insert the document, it's a new one based on header
-                Documents.insert
-                  title: line
-                  order: newOrder
-                , (err,id) ->
-                  #console.log 'RESULT!', err, id
-                  window.wasPasted = false
-                  return unless id
-                  Session.set 'document', id
-              else
-                console.log 'Other!',line
-
-
-
-
-          window.wasPasted = false
-
         # Check if the operation type is a delete and is the document empty? If so, delete the document
         else if op && op[0] && op[0].d && doc.getText().length == 0
           #console.log 'Delete empty document!'
