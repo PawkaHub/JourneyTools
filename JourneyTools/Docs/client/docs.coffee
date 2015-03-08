@@ -147,21 +147,21 @@ Template.editor.helpers
       # Insert the title into the newly created document
       if ace.session.getValue().length == 0
         # Check the current document title against the value stored in the editor
-        current = Documents.findOne Session.get 'document'
-        console.log 'current',current
+        #current = Documents.findOne Session.get 'document'
+        #console.log 'current',current
         # Document title
-        title = current.title
+        #title = current.title
         # Editor Value
-        editorTitle = ace.getValue().split('\n')
+        #editorTitle = ace.getValue().split('\n')
 
-        if title != editorTitle
-          console.log 'Titles don\'t match!'
-          ace.getSession().setValue(title)
-          ace.moveCursorTo(1,0)
-        else
-          #console.log 'Inserting title..'
-          ace.getSession().setValue('#')
-          ace.moveCursorTo(0,2)
+        #if title != editorTitle
+        #  console.log 'Titles don\'t match!'
+        #  ace.getSession().setValue(title)
+        #  ace.moveCursorTo(1,0)
+        #else
+        #console.log 'Inserting title..'
+        ace.getSession().setValue('#')
+        ace.moveCursorTo(0,2)
 
       doc.on 'change', (op) ->
         # Update the markdown preview
@@ -172,6 +172,7 @@ Template.editor.helpers
 
         # Is the operation type an insert and is it a hashtag at the beginning of a new line? If so, create a new document
         if op && op[0] && op[0].i == "#" && cursor.column == 1 && cursor.row != 0
+          window.shouldDelete = false
           current = Documents.findOne Session.get 'document'
 
           console.log 'TYPING IN DOCUMENT!'
@@ -224,7 +225,6 @@ Template.editor.helpers
               # Only fire if there's more than one document
               Meteor.call('deleteDocument', Session.get('document'), (err,result) ->
                   console.log 'DELETED DOCUMENT!'
-                  window.shouldDelete = false
                   # Switch to the prev document and delete the old one
                   if Documents.find().count() == 1
                     console.log 'Do nothing!'
@@ -234,6 +234,8 @@ Template.editor.helpers
                     if prevDocument
                       Session.set 'document',prevDocument._id
               )
+
+          window.shouldDelete = false
 
         else if op && op[0] && ace.session.getValue().length > 0 && cursor.row == 0
 
