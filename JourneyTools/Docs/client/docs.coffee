@@ -97,6 +97,12 @@ Template.docItem.helpers
 Template.docItem.events =
   "click .navigationItem": (e) ->
     e.preventDefault()
+    # Save cursor position
+    Documents.update
+      _id: Session.get 'document'
+    ,
+      $set:
+        cursor: window.aceEditor.getCursorPosition()
     Session.set("document", @_id)
 
 Template.editor.helpers
@@ -126,7 +132,8 @@ Template.editor.helpers
 
       #Listen for paste events
       ace.on 'paste', (e) ->
-        console.log 'Pasted!'
+        console.log 'Pasted!',e
+        window.text = e.text
         window.wasPasted = true
 
       lines = doc.getText().split('\n')
@@ -135,14 +142,24 @@ Template.editor.helpers
       lines = lines.filter (line) ->
         line.substring(0, 1) == '#'
 
-      cursor = ace.getCursorPosition()
-
       window.doc = doc
 
       #console.log 'DOC LINES!',lines
 
+      #Get current document
+      current = Documents.findOne Session.get 'document'
+      console.log 'LOADED!',current
+
       # Move the cursor to the 0 row/column position to avoid a negative cursor position error whenever we load in a new document
-      ace.moveCursorTo(0,0)
+      if ace.session.getValue() == '#'
+        ace.moveCursorTo(0,1)
+      else
+        if current.cursor
+          ace.moveCursorTo(current.cursor.row,current.cursor.column)
+        else
+          ace.moveCursorTo(0,0)
+
+      cursor = ace.getCursorPosition()
 
       # Insert the title into the newly created document
       if ace.session.getValue().length == 0
@@ -198,6 +215,13 @@ Template.editor.helpers
 
             # Remove hashtag
             ace.removeToLineStart()
+
+            # Save cursor position
+            Documents.update
+              _id: current._id
+            ,
+              $set:
+                cursor: cursor
 
             Documents.insert
               title: op[0].i
