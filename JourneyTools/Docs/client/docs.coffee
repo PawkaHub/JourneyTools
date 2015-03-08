@@ -1,5 +1,5 @@
 Meteor.startup ->
-  # Set up delete observer
+  # Set up delete observer to handle remote deletion of documents
   Documents.find({},{sort:{order:1}}).observe
     removed:(doc) ->
 
@@ -157,21 +157,6 @@ Template.editor.helpers
         lines = doc.getText().split('\n')
         cursor = ace.getCursorPosition()
 
-        #Filter out everything that isn't a hashtag line
-        lines = lines.filter (line) ->
-          line.substring(0, 1) == '#'
-
-        #if op && op[0] && op[0].i
-        #  opLines = op[0].i.split('\n')
-
-        #  #Filter out everything that isn't a hashtag line
-        #  opLines = opLines.filter (opLine) ->
-        #    opLine.substring(0, 1) == '#'
-        #  console.log 'OP!',opLines
-
-        #if op && op[0] && op[0].i
-        #  lines = op[0].i.match(/^.*$/mg)
-
         # Is the operation type an insert and is it a hashtag at the beginning of a new line? If so, create a new document
         if op && op[0] && op[0].i == "#" && cursor.column == 1 && cursor.row != 0
           current = Documents.findOne Session.get 'document'
@@ -212,12 +197,56 @@ Template.editor.helpers
           # Remove first item from lines array
           lines.shift()
 
-          console.log 'A BUNCH OF SHIT WAS PASTED!',lines
+          #console.log 'A BUNCH OF SHIT WAS PASTED!',lines
 
           current = Documents.findOne Session.get 'document'
 
           if current
             console.log 'op',op
+
+            for line in lines
+              #console.log 'line!',line
+              # Does the line have a hashtag?
+              hashtagLine = line.match(/^#+([a-zA-Z0-9 ]+?)$/mgi)
+
+              if hashtagLine
+                console.log 'hashtagLine!',hashtagLine
+                # Copy the text to clipboard and then remove it
+
+                # Is the current document sandwiched inbetween another document?
+                nextDocument =
+                  Documents.find { order: $gt: current.order },
+                    sort: order: 1
+                    limit: 1
+                nextDocument = nextDocument.fetch()[0]
+
+                if nextDocument
+                  # Are we inbetween a top level? If so, half the order from the current document to place it underneath
+                  #distance = nextDocument.order + current.order / 2
+                  #console.log 'distance!',distance
+                  newOrder = (nextDocument.order + current.order) / 2
+                  #console.log 'DOCUMENT EXISTS AFTER CURRENT',nextDocument.order, newOrder
+                else
+                  #console.log 'Increment normally'
+                  newOrder = current.order += 1
+
+                # Remove text
+                #ace.removeToLineStart()
+
+                # Insert the document, it's a new one based on header
+                Documents.insert
+                  title: line
+                  order: newOrder
+                , (err,id) ->
+                  #console.log 'RESULT!', err, id
+                  window.wasPasted = false
+                  return unless id
+                  Session.set 'document', id
+              else
+                console.log 'Other!',line
+
+
+
 
           window.wasPasted = false
 
