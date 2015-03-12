@@ -172,6 +172,7 @@ Template.editor.helpers
       console.log 'no doc!'
   setupAce: ->
     (ace,doc) ->
+      window.aceEditor = ace
       #Get current document -> We do it this way to avoid a weird session bug where the document and it's preview will get out of sync
       current = Current
 
@@ -279,7 +280,7 @@ Template.editor.helpers
                 body: []
 
               window.pastedDocs.push docInfo
-              if i is 0
+              if i is 0 and ace.selection.getRange().start.row is 0 and ace.selection.getRange().start.column is 0
                 #e.text = line
                 headerIndex = i
                 # Is the header position at the start of the document? NOTE: WILL HAVE TO DO A BETTER CHECK FOR THIS AS COPYING THE SAME TEXT ON A DIFFERENT LINE WILL PASTE IT NORMALLY, WHICH IS NOT WHAT WE WANT
@@ -307,19 +308,20 @@ Template.editor.helpers
             # Call updateDocs after a set period of time
             updateDocs(current)
         #console.log 'Pasted!',e.text
+        Session.set 'snapshot',ace.getSession().getValue()
 
       #Keep document changes in sync
       ace.keyBinding.addKeyboardHandler (data, hash, keyString, keyCode, event) ->
         #console.log 'change!'
         # Always update the title based on what the first line is
         #console.log 'Change!',e
-        if doc and doc.getText
-          Session.set 'snapshot',doc.getText()
+        #if doc and doc.getText
+          #Session.set 'snapshot',ace.getSession().getValue()
         title = ace.getSession().getLine(0)
         updateTitle(title)
         cursor = ace.getCursorPosition()
 
-      Session.set 'snapshot',doc.getText()
+      Session.set 'snapshot',ace.getSession().getValue()
 
   configAce: ->
     (ace) ->
@@ -351,3 +353,6 @@ window.onkeydown = (e) ->
   if e.ctrlKey and e.shiftKey and e.keyCode is 70
     # Enter fullscreen mode
     screenfull.toggle(document.documentElement)
+
+window.onkeyup = (e) ->
+  Session.set 'snapshot',window.aceEditor.getSession().getValue()

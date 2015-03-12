@@ -11,5 +11,5 @@ coffeescript
 stylus
 mrt:jquery-ui
 mizzao:sharejs-ace
-chuangbo:marked
 reactive-var
+chuangbo:marked
