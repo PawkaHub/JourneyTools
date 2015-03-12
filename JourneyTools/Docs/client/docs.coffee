@@ -1,4 +1,5 @@
 Meteor.startup ->
+  window.Current = null
   # Set up delete observer to handle remote deletion of documents
   Documents.find({},{sort:{order:1}}).observe
     removed:(doc) ->
@@ -20,6 +21,11 @@ Meteor.startup ->
 # Sortable list functionality
 Template.docList.rendered = ->
   self = this
+  #Automatically set current variable to update whenever the document session is changed
+  self.autorun((computation)->
+    if Documents.findOne(Session.get('document'))
+      window.Current = Documents.findOne(Session.get('document'))
+  )
   # Set up scroll event
   @$('#navigation').scroll (e) ->
     #Use the get elementFromPoint function to determine what element is currently scrolled past our y threshold.
@@ -136,13 +142,6 @@ updateDocs = (current) ->
         #Create an empty doc for now
         createDoc(doc.title,newOrder,docText)
 
-updateCursor = (docId,cursor) ->
-  Documents.update
-      _id: docId
-    ,
-      $set:
-        cursor: cursor
-
 updateTitle = (title) ->
   Documents.update
       _id: Session.get 'document'
@@ -170,20 +169,17 @@ Template.editor.helpers
       console.log 'no doc!'
   setupAce: ->
     (ace,doc) ->
-      window.doc = doc
-      window.aceEditor = ace
-      #Get current document
-      current = Documents.findOne Session.get 'document'
-      #console.log 'LOADED!',current
+      #Get current document -> We do it this way to avoid a weird session bug where the document and it's preview will get out of sync
+      current = Current
 
       #Check for if there's docText and populate the text accordingly if the document is empty
       if current and doc
         if current.docText and doc.getText().length is 0
-          console.log 'Updating docText!',current
+          #console.log 'Updating docText!',current
           ace.getSession().setValue(current.docText)
           # Remove the docText from the document so that it doesn't fire again on new document changes
           Documents.update
-              _id: Session.get 'document'
+              _id: current._id
             ,
               $unset:
                 docText: ''
@@ -307,23 +303,19 @@ Template.editor.helpers
           if window.pastedDocs.length
             # Call updateDocs after a set period of time
             updateDocs(current)
-        console.log 'Pasted!',e.text
-
-      #Save cursor on blur
-      ace.on 'blur', (e) ->
-        #console.log 'blur'
-        # Save cursor position
-        #updateCursor(current._id,cursor)
+        #console.log 'Pasted!',e.text
 
       #Keep document changes in sync
       doc.on 'change', (op) ->
         #console.log 'change!'
         # Always update the title based on what the first line is
         #console.log 'Change!',e
+        Session.set 'snapshot',doc.getText()
         title = ace.getSession().getLine(0)
         updateTitle(title)
         cursor = ace.getCursorPosition()
-        #updateCursor(current._id,cursor)
+
+      Session.set 'snapshot',doc.getText()
 
   configAce: ->
     (ace) ->
@@ -347,7 +339,7 @@ Template.editor.helpers
 
 Template.code.helpers
   input: ->
-    Session.get 'snapshot'
+    Session.get('snapshot')
 
 # Global key events
 window.onkeydown = (e) ->

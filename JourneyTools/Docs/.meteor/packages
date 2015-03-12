@@ -9,6 +9,7 @@ autopublish
 insecure
 coffeescript
 stylus
-markdown
 mrt:jquery-ui
 mizzao:sharejs-ace
+chuangbo:marked
+reactive-var
