@@ -166,12 +166,6 @@ Template.editor.helpers
       current = Documents.findOne Session.get 'document'
       #console.log 'LOADED!',current
 
-      ace.on 'focus', (e) ->
-        console.log 'focus'
-
-      ace.on 'changeSession', (e) ->
-        console.log 'changeSession'
-
       #Check for if there's docText and populate the text accordingly if the document is empty
       if current and doc
         if current.docText and doc.getText().length is 0
