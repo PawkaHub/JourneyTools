@@ -4,7 +4,7 @@ Meteor.startup ->
   Documents.find({},{sort:{order:1}}).observe
     removed:(doc) ->
 
-      console.log 'Removed!', doc
+      #console.log 'Removed!', doc
 
       order = doc.order
 
@@ -14,7 +14,7 @@ Meteor.startup ->
           limit: 1
       prevDocument = prevDocument.fetch()[0]
 
-      console.log 'Switch to previous!'
+      #console.log 'Switch to previous!'
       if prevDocument
         Session.set 'document',prevDocument._id
 
@@ -113,7 +113,7 @@ Template.editor.helpers
     Session.get("document")
 
 updateDocs = (current) ->
-  console.log 'updateDocs'
+  #console.log 'updateDocs'
   # Create the new documents based on what docs have been generated in the pastedDocs array
   for doc, i in window.pastedDocs
     #console.log 'doc!',doc
@@ -121,9 +121,12 @@ updateDocs = (current) ->
     docText = doc.title + "\n" + doc.body.join('\n')
     #console.log 'docText!',docText
     # Don't run if it's the topHeader, as we've already handled that in the paste function and this is only for new document creation handling
-    unless doc.isTopHeader
+    if doc.isTopHeader
+      #Just update the title
+      updateTitle(doc.title)
+    else
       # Since it's not a top level, we require a new document to be made, and we shall do so here, whilst populating the new document with text from the pasted content.
-      console.log 'CREATE A NEW DOCUMENT!'
+      #console.log 'CREATE A NEW DOCUMENT!'
 
       if current
         # Is the current document sandwiched inbetween another document?
@@ -199,7 +202,7 @@ Template.editor.helpers
         exec: (editor) ->
           if doc.getText().length is 0
             #If document is empty, delete document
-            console.log 'DeleteDocument!'
+            #console.log 'DeleteDocument!'
             if current
               order = current.order
               prevDocument =
@@ -216,7 +219,7 @@ Template.editor.helpers
                   #console.log 'Do nothing!'
                   #Session.set 'document',Documents.findOne()._id
                   unless Documents.find().count() is 1
-                    console.log 'Switch to previous!'
+                    #console.log 'Switch to previous!'
                     if prevDocument
                       Session.set 'document',prevDocument._id
                     else
@@ -306,11 +309,12 @@ Template.editor.helpers
         #console.log 'Pasted!',e.text
 
       #Keep document changes in sync
-      doc.on 'change', (op) ->
+      ace.keyBinding.addKeyboardHandler (data, hash, keyString, keyCode, event) ->
         #console.log 'change!'
         # Always update the title based on what the first line is
         #console.log 'Change!',e
-        Session.set 'snapshot',doc.getText()
+        if doc and doc.getText
+          Session.set 'snapshot',doc.getText()
         title = ace.getSession().getLine(0)
         updateTitle(title)
         cursor = ace.getCursorPosition()
