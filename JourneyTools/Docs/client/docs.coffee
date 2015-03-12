@@ -24,26 +24,19 @@ Template.docList.rendered = ->
     axis: 'y'
     revert: 100
     stop: (e, ui) ->
-      # get the dragged html element and the one before
-      #   and after it
+      # get the dragged html element and the one before and after it
       el = ui.item.get(0)
       before = ui.item.prev().get(0)
       after = ui.item.next().get(0)
-      # Here is the part that blew my mind!
-      #  Blaze.getData takes as a parameter an html element
-      #    and will return the data context that was bound when
-      #    that html element was rendered!
       if !before
-        #if it was dragged into the first position grab the
-        # next element's data context and subtract one from the order
+        #if it was dragged into the first position grab the next element's data context and subtract one from the order
         newOrder = Blaze.getData(after).order - 1
       else if !after
-        #if it was dragged into the last position grab the
-        #  previous element's data context and add one to the order
+        #if it was dragged into the last position grab the previous element's data context and add one to the order
         newOrder = Blaze.getData(before).order + 1
       else
         newOrder = (Blaze.getData(after).order + Blaze.getData(before).order) / 2
-      #update the dragged Item's order
+      #update the dragged Document's order
       Documents.update
         _id: Blaze.getData(el)._id
       ,
@@ -96,25 +89,70 @@ Template.docItem.helpers
 
 Template.docItem.events =
   "click .navigationItem": (e) ->
-    e.preventDefault()
     # Save cursor position
-    Documents.update
-      _id: Session.get 'document'
-    ,
-      $set:
-        cursor: window.aceEditor.getCursorPosition()
     Session.set("document", @_id)
 
 Template.editor.helpers
   docid: ->
     Session.get("document")
 
-window.shouldDelete = false
-window.wasPasted = false
+updateDocs = (current) ->
+  console.log 'updateDocs'
+  # Create the new documents based on what docs have been generated in the pastedDocs array
+  for doc, i in window.pastedDocs
+    #console.log 'doc!',doc
+    # First, let's convert the object to string so that it's all text that we can work with for ace's setValue method.
+    docText = doc.title + "\n" + doc.body.join('\n')
+    #console.log 'docText!',docText
+    # Don't run if it's the topHeader, as we've already handled that in the paste function and this is only for new document creation handling
+    unless doc.isTopHeader
+      # Since it's not a top level, we require a new document to be made, and we shall do so here, whilst populating the new document with text from the pasted content.
+      console.log 'CREATE A NEW DOCUMENT!'
+
+      if current
+        # Is the current document sandwiched inbetween another document?
+        nextDocument =
+          Documents.find { order: $gt: current.order },
+            sort: order: 1
+            limit: 1
+        nextDocument = nextDocument.fetch()[0]
+
+        if nextDocument
+          # Are we inbetween a top level? If so, half the order from the current document to place it underneath
+          newOrder = (nextDocument.order + current.order) / 2
+        else
+          newOrder = current.order += 1
+
+        #Create an empty doc for now
+        createDoc(doc.title,newOrder,docText)
+
+updateCursor = (docId,cursor) ->
+  Documents.update
+      _id: docId
+    ,
+      $set:
+        cursor: cursor
+
+updateTitle = (title) ->
+  Documents.update
+      _id: Session.get 'document'
+    ,
+      $set:
+        title: title
+
+createDoc = (title,order,docText) ->
+  Documents.insert
+      title: title
+      order: order
+      docText: docText
+    , (err,id) ->
+      return unless id
+      Session.set 'document', id
 
 Template.editor.helpers
   load: ->
     document = Documents.findOne()
+
     if document
       #console.log 'doc exists'
       Session.set 'document', document._id
@@ -122,155 +160,166 @@ Template.editor.helpers
       console.log 'no doc!'
   setupAce: ->
     (ace,doc) ->
-      window.aceEditor = ace
-      Session.set 'snapshot',doc.getText()
-
-      #Listen for the delete key
-      ace.keyBinding.addKeyboardHandler (data, hash, keyString, keyCode, event) ->
-          if keyCode == 8
-            window.shouldDelete = true
-
-      #Listen for paste events
-      ace.on 'paste', (e) ->
-        console.log 'Pasted!',e
-        window.text = e.text
-        window.wasPasted = true
-
-      lines = doc.getText().split('\n')
-
-      #Filter out everything that isn't a hashtag line
-      lines = lines.filter (line) ->
-        line.substring(0, 1) == '#'
-
       window.doc = doc
-
-      #console.log 'DOC LINES!',lines
-
+      window.aceEditor = ace
       #Get current document
       current = Documents.findOne Session.get 'document'
-      console.log 'LOADED!',current
+      #console.log 'LOADED!',current
 
-      # Move the cursor to the 0 row/column position to avoid a negative cursor position error whenever we load in a new document
-      if ace.session.getValue() == '#'
-        ace.moveCursorTo(0,1)
-      else
-        if current.cursor
-          ace.moveCursorTo(current.cursor.row,current.cursor.column)
-        else
-          ace.moveCursorTo(0,0)
+      ace.on 'focus', (e) ->
+        console.log 'focus'
 
-      cursor = ace.getCursorPosition()
+      ace.on 'changeSession', (e) ->
+        console.log 'changeSession'
 
-      # Insert the title into the newly created document
-      if ace.session.getValue().length == 0
-        # Check the current document title against the value stored in the editor
-        #current = Documents.findOne Session.get 'document'
-        #console.log 'current',current
-        # Document title
-        #title = current.title
-        # Editor Value
-        #editorTitle = ace.getValue().split('\n')
-
-        #if title != editorTitle
-        #  console.log 'Titles don\'t match!'
-        #  ace.getSession().setValue(title)
-        #  ace.moveCursorTo(1,0)
-        #else
-        #console.log 'Inserting title..'
-        ace.getSession().setValue('#')
-        ace.moveCursorTo(0,2)
-
-      doc.on 'change', (op) ->
-        # Update the markdown preview
-        Session.set 'snapshot',doc.getText()
-
-        lines = doc.getText().split('\n')
-        cursor = ace.getCursorPosition()
-
-        # Is the operation type an insert and is it a hashtag at the beginning of a new line? If so, create a new document
-        if op && op[0] && op[0].i == "#" && cursor.column == 1 && cursor.row != 0
-          window.shouldDelete = false
-          current = Documents.findOne Session.get 'document'
-
-          console.log 'TYPING IN DOCUMENT!'
-
-          if current
-
-            # Is the current document sandwiched inbetween another document?
-            nextDocument =
-              Documents.find { order: $gt: current.order },
-                sort: order: 1
-                limit: 1
-            nextDocument = nextDocument.fetch()[0]
-
-            if nextDocument
-              # Are we inbetween a top level? If so, half the order from the current document to place it underneath
-              #distance = nextDocument.order + current.order / 2
-              #console.log 'distance!',distance
-              newOrder = (nextDocument.order + current.order) / 2
-              #console.log 'DOCUMENT EXISTS AFTER CURRENT',nextDocument.order, newOrder
-            else
-              #console.log 'Increment normally'
-              newOrder = current.order += 1
-
-            # Remove hashtag
-            ace.removeToLineStart()
-
-            # Save cursor position
-            Documents.update
-              _id: current._id
-            ,
-              $set:
-                cursor: cursor
-
-            Documents.insert
-              title: op[0].i
-              order: newOrder
-            , (err,id) ->
-              #console.log 'RESULT!', err, id
-              return unless id
-              Session.set 'document', id
-        # Check if the operation type is a delete and is the document empty? If so, delete the document
-        else if op && op[0] && op[0].d && doc.getText().length == 0
-          #console.log 'Delete empty document!'
-
-          current = Documents.findOne Session.get 'document'
-          if current
-            order = current.order
-
-            prevDocument =
-              Documents.find { order: $lt: current.order },
-                sort: order: -1
-                limit: 1
-            prevDocument = prevDocument.fetch()[0]
-
-            if window.shouldDelete
-              console.log 'WILL DELETE!'
-              # Only fire if there's more than one document
-              Meteor.call('deleteDocument', Session.get('document'), (err,result) ->
-                  console.log 'DELETED DOCUMENT!'
-                  # Switch to the prev document and delete the old one
-                  if Documents.find().count() == 1
-                    console.log 'Do nothing!'
-                    Session.set 'document',Documents.findOne()._id
-                  else
-                    console.log 'Switch to previous!'
-                    if prevDocument
-                      Session.set 'document',prevDocument._id
-              )
-
-          window.shouldDelete = false
-
-        else if op && op[0] && ace.session.getValue().length > 0 && cursor.row == 0
-
-          #console.log 'Dwoop',lines
-
-          # If it's another type of insert and the document isn't empty
+      #Check for if there's docText and populate the text accordingly if the document is empty
+      if current and doc
+        if current.docText and doc.getText().length is 0
+          console.log 'Updating docText!',current
+          ace.getSession().setValue(current.docText)
+          # Remove the docText from the document so that it doesn't fire again on new document changes
           Documents.update
               _id: Session.get 'document'
             ,
-              $set:
-                title: lines[0]
+              $unset:
+                docText: ''
+
+      #Move cursor to end of file
+      ace.selection.moveCursorFileEnd()
+
+      #Get cursor position
+      cursor = ace.getCursorPosition()
+
+      #Add delete command
+      ace.commands.addCommand
+        name: 'deleteDocument'
+        bindKey:
+          win: 'Backspace'
+          mac: 'Backspace'
+        exec: (editor) ->
+          if doc.getText().length is 0
+            #If document is empty, delete document
+            console.log 'DeleteDocument!'
+            if current
+              order = current.order
+              prevDocument =
+                Documents.find { order: $lt: current.order },
+                  sort: order: -1
+                  limit: 1
+              prevDocument = prevDocument.fetch()[0]
+
+              # Only fire if there's more than one document
+              Meteor.call('deleteDocument', Session.get('document'), (err,result) ->
+                  #console.log 'DELETED DOCUMENT!'
+                  # Switch to the prev document and delete the old one, if a previous document exists. Otherwise, revert to the default
+                  #if Documents.find().count() is 1
+                  #console.log 'Do nothing!'
+                  #Session.set 'document',Documents.findOne()._id
+                  unless Documents.find().count() is 1
+                    console.log 'Switch to previous!'
+                    if prevDocument
+                      Session.set 'document',prevDocument._id
+                    else
+                      # Go to the first document
+                      Documents.findOne()._id
+              )
+          else
+            #Just run the normal backspace function
+            ace.remove('left')
+
+      #Add hashtag command
+      ace.commands.addCommand
+        name: 'createDocument'
+        bindKey:
+          win: '#'
+          mac: '#'
+        exec: (editor) ->
+          if cursor.column is 0 and cursor.row isnt 0
+            console.log 'CreateDocument!',editor
+            #Create a new document
+            if current
+              # Is the current document sandwiched inbetween another document?
+              nextDocument =
+                Documents.find { order: $gt: current.order },
+                  sort: order: 1
+                  limit: 1
+              nextDocument = nextDocument.fetch()[0]
+
+              if nextDocument
+                # Are we inbetween a top level? If so, half the order from the current document to place it underneath
+                newOrder = (nextDocument.order + current.order) / 2
+              else
+                newOrder = current.order += 1
+
+              createDoc('',newOrder, '#')
+          else
+            #Just run the normal # insert function
+            ace.insert('#')
+
+      #Listen for paste events and create documents accordingly
+      ace.on 'paste', (e) ->
+        if e.text
+          lines = e.text.split('\n')
+          headerIndex = 0
+          window.pastedDocs = []
+          #console.log 'Trigger bulk document creation!',lines
+          # Iterate over all the lines in the document and find hashtags
+          for line, i in lines
+            #console.log 'line!',line
+            if line and line.substring(0, 1) is '#'
+              e.text = null
+              #console.log 'hashtag header! Trigger document creation!',line,i
+              # Is it the first hashtag in the header?
+              # Create a doc
+              docInfo =
+                title: line
+                body: []
+
+              window.pastedDocs.push docInfo
+              if i is 0
+                #e.text = line
+                headerIndex = i
+                # Is the header position at the start of the document? NOTE: WILL HAVE TO DO A BETTER CHECK FOR THIS AS COPYING THE SAME TEXT ON A DIFFERENT LINE WILL PASTE IT NORMALLY, WHICH IS NOT WHAT WE WANT
+                docInfo.isTopHeader = true
+                #headerLine = line
+                #ace.getSession()
+              else
+                #console.log 'Normal header! Create document!',line,i
+                headerIndex = i
+            else if i > headerIndex
+              #console.log 'It\'s body text!',line,i,headerIndex
+              if docInfo
+                docInfo.body.push line
+
+          for doc, i in window.pastedDocs
+            #console.log 'doc!',doc
+            # First, let's convert the object to string so that it's all text that we can work with for ace's setValue method.
+            docText = doc.title + "\n" + doc.body.join('\n')
+            if doc.isTopHeader
+              # Since it's the same document, we don't need to create a new one and can simply let the paste proceed as normal
+              #e.text = docText
+              ace.getSession().setValue(docText)
+
+          if window.pastedDocs.length
+            # Call updateDocs after a set period of time
+            updateDocs(current)
+        console.log 'Pasted!',e.text
+
+      #Save cursor on blur
+      ace.on 'blur', (e) ->
+        #console.log 'blur'
+        # Save cursor position
+        #updateCursor(current._id,cursor)
+
+      #Keep document changes in sync
+      doc.on 'change', (op) ->
+        #console.log 'change!'
+        # Always update the title based on what the first line is
+        #console.log 'Change!',e
+        title = ace.getSession().getLine(0)
+        updateTitle(title)
+        cursor = ace.getCursorPosition()
+        #updateCursor(current._id,cursor)
 
   configAce: ->
     (ace) ->
@@ -288,6 +337,7 @@ Template.editor.helpers
 
       # Set the editor's scroll margin
       ace.renderer.setScrollMargin(30,0,0,0)
+
       # Focus the editor
       ace.focus()
 
