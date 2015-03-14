@@ -27,14 +27,14 @@ Template.docList.rendered = ->
       window.Current = Documents.findOne(Session.get('document'))
   )
   # Set up scroll event
-  @$('#navigation').scroll (e) ->
+  ###@$('#navigation').scroll (e) ->
     #Use the get elementFromPoint function to determine what element is currently scrolled past our y threshold.
     scrollItem = document.elementFromPoint(0,20)
     #Get the data context from our scroll item
     scrollItemData = Blaze.getData(scrollItem)
     # Check if the scrollItemData is different from our current document, and if it is, switch the document to be the new one
     if scrollItemData && scrollItemData._id != Session.get 'document'
-      Session.set 'document', scrollItemData._id
+      Session.set 'document', scrollItemData._id###
   # Set up sortable navigation
   @$('#navigation').sortable
     axis: 'y'
