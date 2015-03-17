@@ -114,11 +114,19 @@ a
 //Output Customization
 img
 	width 100%
-iframe
-  width 100%
-  min-height 240px
-  height 100%
-  max-height 400px
+.video
+  position relative
+  padding-bottom 56.25% /* 16:9 */
+  padding-top 25px
+  height 0
+  iframe
+    position absolute
+    top 0
+    left 0
+    width 100%
+    height 100%
+    frameborder 0
+    border none
 blockquote
   background-color dark
   border-left 10px solid halfMedium
