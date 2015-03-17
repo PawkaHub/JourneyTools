@@ -9,12 +9,8 @@
 
 <template name="main">
     {{> docList}}
-    <div class="editor">
-        {{> editor}}
-    </div>
-    <div class="output">
-    	{{>code}}
-    </div>
+    {{> editor}}
+	{{>code}}
 </template>
 
 <template name="docList">
@@ -30,12 +26,16 @@
 </template>
 
 <template name="editor">
+	<div class="editor">
 	{{load}}
     {{#with docid}}
         {{> sharejsAce docid=this onRender=configAce onConnect=setupAce id="editor"}}
     {{/with}}
+    </div>
 </template>
 
 <template name="code">
+    <div id="output" class="output">
 	{{#markdown}}{{input}}{{/markdown}}
+	</div>
 </template>
