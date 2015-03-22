@@ -1,3 +1,0 @@
-[submodule "JourneyTools/Meteor-MongoDB-Backup-Restore"]
-	path = JourneyTools/Meteor-MongoDB-Backup-Restore
-	url = git@github.com:oguzgelal/Meteor-MongoDB-Backup-Restore.git
