@@ -353,6 +353,11 @@ window.onkeydown = (e) ->
   if e.ctrlKey and e.shiftKey and e.keyCode is 70
     # Enter fullscreen mode
     screenfull.toggle(document.documentElement)
+  # M key?
+  if e.ctrlKey and e.shiftKey and e.keyCode is 77
+    # Enter fullscreen mode
+    map = document.querySelector('.map')
+    screenfull.toggle(map)
 
 window.onkeyup = (e) ->
   Session.set 'snapshot',window.aceEditor.getSession().getValue()
