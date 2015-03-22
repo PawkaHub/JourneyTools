@@ -1,0 +1,252 @@
+﻿.Outliner {
+	color: rgba(192, 197, 206, 0.5);
+	background: #1C1F26;
+	padding: 5px 5px 5px 0;
+	width: 100%;
+	height: 140px;
+	font-size: 12px;
+	cursor: default;
+	overflow: auto;
+	outline: none;
+}
+
+	.Outliner .option {
+		padding: 0 5px 0 10px;
+		white-space: nowrap;
+		line-height: 26px;
+		height: 24px;
+	}
+
+	.Outliner .option.active {
+		background-color: #2B303B;
+	}
+
+.Panel.Collapsible.collapsed .Static .Button {
+	border-left-color: #444;
+}
+
+.Panel.Collapsible:not(.collapsed) .Static .Button {
+	border-top-color: #444;
+}
+
+#viewport {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+}
+
+	#viewport #info {
+		text-shadow: 1px 1px 0px rgba(0,0,0,0.25);
+	}
+
+#script {
+	position: absolute;
+	top: 32px;
+	left: 0px;
+	right: 300px;
+	bottom: 32px;
+	opacity: 0.9;
+}
+
+#player {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+}
+
+#menubar {
+	position: absolute;
+	width: 240px;
+	height: 32px;
+	background: #232830;
+	padding: 0px;
+	margin: 0px;
+	right: 0px;
+	top: 0px;
+	z-index: 1;
+}
+
+	#menubar .menu {
+		float: left;
+		cursor: pointer;
+		padding-right: 8px;
+	}
+
+	#menubar .menu.right {
+		float: right;
+		cursor: auto;
+		text-align: right;
+	}
+
+		#menubar .menu .title {
+			display: inline-block;
+			color: rgb(192, 197, 206);
+			margin: 0px;
+			padding: 8px;
+		}
+
+		#menubar .menu .options {
+			position: absolute;
+			display: none;
+			padding: 5px 0px;
+			background: #232830;
+			width: 150px;
+		}
+
+		#menubar .menu:hover .options {
+			display: block;
+		}
+
+			#menubar .menu .options hr {
+				border-color: rgba(43,48,59,1);
+			}
+
+			#menubar .menu .options .option {
+				color: rgb(192, 197, 206);
+				background-color: transparent;
+				padding: 5px 10px;
+				margin: 0px !important;
+			}
+
+				#menubar .menu .options .option:hover {
+					color: #fff;
+					background-color: #08f;
+				}
+
+				#menubar .menu .options .option:active {
+					background: transparent;
+				}
+
+#sidebar {
+	position: absolute;
+	right: 0px;
+	top: 32px;
+	bottom: 0px;
+	width: 240px;
+	background-color: #232830;
+	overflow-y: auto;
+	overflow-x: hidden;
+}
+
+	#sidebar * {
+		vertical-align: middle;
+	}
+
+	#sidebar input,
+	#sidebar textarea,
+	#sidebar select {
+		background: #1C1F26;
+		border: 1px solid transparent;
+		color: rgb(192, 197, 206);
+		padding: 0 5px 0 5px;
+		-webkit-appearance: none;
+		border-radius: 0;
+		-webkit-user-select: none;
+		user-select: none;
+	}
+
+	#sidebar input.Number {
+		color: rgba(192, 197, 206, 0.5);
+	}
+
+	#sidebar input.Number::selection {
+		background: transparent;
+	}
+
+	#sidebar select {
+		background: #232830;
+	}
+
+	#sidebar select:focus {
+		outline: none;
+	}
+
+	#sidebar .Panel {
+		/*margin-bottom: 10px;*/
+	}
+
+	#sidebar .Panel.collapsed {
+		margin-bottom: 0px;
+	}
+
+	#sidebar > .Panel {
+		color: rgb(192, 197, 206);
+		margin-bottom: 0;
+		border-top: 1px solid rgba(43,48,59,1);
+	}
+
+	#sidebar .Panel.Scene .Static {
+		display: none;
+	}
+
+	#sidebar .Panel.Material .Static {
+		display: none;
+	}
+
+	#sidebar .Panel.Material .Content .Panel {
+		height: 24px;
+		margin-bottom: 0;
+	}
+
+	#sidebar .Panel.Material canvas {
+
+		border: solid 1px #5A5A5A;
+
+	}
+
+	#sidebar .Panel.Mesh .Static {
+		display: none;
+	}
+
+	#sidebar .Panel.Geometry .Static {
+		display: none;
+	}
+
+input.Number {
+	font-size: 12px;							/** TODO: Use of !imporant is not ideal **/
+	background-color: transparent!important;	/* For now this is a quick fix a rendering issue due to inherited background */
+	border: 1px solid transparent;
+	padding: 2px;
+	cursor: col-resize;
+	margin-top: 2px;
+	margin-bottom: 10px;
+}
+
+input.Color {
+	position: absolute;
+}
+
+input.Color::-webkit-color-swatch-wrapper {
+	padding: 0;
+}
+
+input.Color::-webkit-color-swatch {
+	border: none;
+}
+
+#toolbar {
+	position: absolute;
+	left: 0px;
+	right: 300px;
+	bottom: 0px;
+	height: 32px;
+	background-color: #111;
+	color: rgba(43,48,59,1);
+}
+
+	#toolbar * {
+		vertical-align: middle;
+	}
+
+	#toolbar .Panel {
+		padding: 4px;
+		color: rgb(192, 197, 206);
+	}
+
+	#toolbar button {
+		margin-right: 6px;
+	}

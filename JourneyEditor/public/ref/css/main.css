@@ -1,0 +1,150 @@
+body {
+	font-family: Helvetica, Arial, sans-serif;
+	font-size: 14px;
+	margin: 0;
+	overflow: hidden;
+}
+
+hr {
+	border: 0px;
+	border-top: 1px solid #ccc;
+}
+
+button {
+	position: relative;
+}
+
+textarea {
+	tab-size: 4;
+	white-space: pre;
+	word-wrap: normal;
+}
+
+	textarea.success {
+		border-color: #8b8 !important;
+	}
+
+	textarea.fail {
+		border-color: #f00 !important;
+		background-color: rgba(255,0,0,0.05);
+	}
+
+textarea, input { outline: none; } /* osx */
+
+.Panel {
+	-moz-user-select: none;
+	-webkit-user-select: none;
+	-ms-user-select: none;
+
+	/* No support for these yet */
+	-o-user-select: none;
+	user-select: none;
+}
+
+	.Panel .Text {
+		font-size: 10px;
+		padding: 0 0 0 5px;
+	}
+
+	.Panel.Collapsible .Static {
+		padding: 8px 0 8px 8px;
+		font-size: 10px;
+	}
+
+	.Panel.Collapsible .Static .Button {
+		float: left;
+		margin-right: 6px;
+		width: 0px;
+		height: 0px;
+		border: 6px solid transparent;
+	}
+
+	.Panel.Collapsible.collapsed .Static .Button {
+		margin-top: 2px;
+		border-left-color: #bbb;
+	}
+
+	.Panel.Collapsible:not(.collapsed) .Static .Button {
+		margin-top: 6px;
+		border-top-color: #bbb;
+	}
+
+	.Panel.Collapsible.collapsed .Content {
+		display: none;
+	}
+
+/* CodeMirror */
+
+.CodeMirror {
+
+	position: absolute !important;
+	top: 37px;
+	width: 100% !important;
+	height: calc(100% - 37px) !important;
+
+}
+
+	.CodeMirror .errorLine {
+
+		background: rgba(255,0,0,0.25);
+
+	}
+
+	.CodeMirror .esprima-error {
+
+		color: #f00;
+		text-align: right;
+		padding: 0px 20px;
+
+	}
+
+/* scene types */
+
+.type {
+	position:relative;
+	top:-1px;
+	background: #ddd;
+	display: inline-block;
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	margin-right: 4px;
+}
+
+.type.Scene {
+	background: #ccccff;
+}
+
+.type.Object3D {
+	background: #aaaaee;
+}
+
+.type.Mesh {
+	background: #8888ee;
+}
+
+/* */
+
+.type.PointLight {
+	background: #dddd00;
+}
+
+/* */
+
+.type.Geometry {
+	background: #88ff88;
+}
+
+.type.BoxGeometry {
+	background: #bbeebb;
+}
+
+/* */
+
+.type.Material {
+	background: transparent;
+}
+
+.type.MeshPhongMaterial {
+	background: transparent;
+}
