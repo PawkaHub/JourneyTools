@@ -5,6 +5,7 @@ Meteor.methods
 		if Documents.find().count() > 1
 			Documents.remove(id)
 			ShareJS.model.delete(id) unless @isSimulation # ignore error
+		return
 	updateDocuments: (docInfo) ->
 		#console.log 'refreshBookmarks called!',line
 		Documents.update
