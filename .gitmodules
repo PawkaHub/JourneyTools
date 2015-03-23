@@ -1,0 +1,6 @@
+[submodule "JourneyEditor/packages/editor"]
+	path = JourneyEditor/packages/editor
+	url = git@github.com:PawkaHub/JourneyEditor.git
+[submodule "JourneyEditor/packages/Mocker"]
+	path = JourneyEditor/packages/Mocker
+	url = git@github.com:PawkaHub/Mocker.git
