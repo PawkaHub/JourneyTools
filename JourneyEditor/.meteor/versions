@@ -32,7 +32,6 @@ mobile-status-bar@1.0.3
 mongo@1.1.0
 observe-sequence@1.0.5
 ordered-dict@1.0.3
-pawkadeploy:editor@0.0.1
 random@1.0.3
 reactive-dict@1.1.0
 reactive-var@1.0.5
