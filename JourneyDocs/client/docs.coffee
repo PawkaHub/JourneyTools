@@ -368,3 +368,16 @@ window.onkeydown = (e) ->
 
 window.onkeyup = (e) ->
   Session.set 'snapshot',window.aceEditor.getSession().getValue()
+
+window.addEventListener 'message', ((event) ->
+  console.log 'oh'
+  if event.origin is 'http://localhost:7331'
+    if event.data is 'resize'
+      map = document.querySelector('.map')
+      if mapFullscreen
+        screenfull.exit()
+        mapFullscreen = false
+      else
+        screenfull.request(map)
+        mapFullscreen = true
+), false
