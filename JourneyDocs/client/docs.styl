@@ -101,11 +101,14 @@ a
   top 0
   right 0
   bottom 0
-  left 60%
+  left 0
   color text
   padding 1em 1.5em 1em 1.5em
   overflow-x hidden
   overflow-y auto
+  -webkit-backface-visibility hidden
+  -webkit-transform translateZ(0)
+  margin-left 60% //Addressed weird fullscreen quirk when resizing maps
 
 .code
   padding 1em 1.5em 1em 1.5em
@@ -147,3 +150,6 @@ p
   left 0
   padding 0
   height 100%
+
+.output:-webkit-full-screen
+  position fixed

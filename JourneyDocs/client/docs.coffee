@@ -347,6 +347,8 @@ Template.code.helpers
   input: ->
     Session.get('snapshot')
 
+mapFullscreen = false
+
 # Global key events
 window.onkeydown = (e) ->
   # F key?
@@ -357,7 +359,12 @@ window.onkeydown = (e) ->
   if e.ctrlKey and e.shiftKey and e.keyCode is 77
     # Enter fullscreen mode
     map = document.querySelector('.map')
-    screenfull.toggle(map)
+    if mapFullscreen
+      screenfull.exit()
+      mapFullscreen = false
+    else
+      screenfull.request(map)
+      mapFullscreen = true
 
 window.onkeyup = (e) ->
   Session.set 'snapshot',window.aceEditor.getSession().getValue()
