@@ -351,6 +351,9 @@ mapFullscreen = false
 
 # Global key events
 window.onkeydown = (e) ->
+  if e.keyCode is 8
+    # Prevent browser back button
+    e.preventDefault()
   # F key?
   if e.ctrlKey and e.shiftKey and e.keyCode is 70
     # Enter fullscreen mode
@@ -380,4 +383,6 @@ window.addEventListener 'message', ((event) ->
       else
         screenfull.request(map)
         mapFullscreen = true
+    if event.data is 'blur'
+      window.aceEditor.blur()
 ), false
